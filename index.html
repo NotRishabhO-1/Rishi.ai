@@ -8,60 +8,100 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
-        body { font-family: 'Inter', sans-serif; overflow: hidden; }
-        .cursor-blink { display: inline-block; width: 8px; height: 18px; background: #3b82f6; margin-left: 2px; animation: blink 1s infinite; vertical-align: middle; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        body { font-family: 'Inter', sans-serif; overflow: hidden; height: 100dvh; touch-action: manipulation; }
         #app { display: none; }
         #loading { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; background: white; z-index: 9999; }
         .dark #loading { background: #0f172a; color: white; }
+        .msg-body pre { background: #1e293b; color: #f8fafc; padding: 1rem; border-radius: 0.75rem; margin: 0.5rem 0; overflow-x: auto; font-size: 0.85rem; }
+        .msg-body code { color: #3b82f6; font-weight: 600; }
         @media (max-width: 768px) {
             #sidebar { position: fixed; left: -280px; z-index: 50; transition: transform 0.3s; width: 280px; height: 100%; }
             #sidebar.open { transform: translateX(280px); }
-            #sidebar-overlay.open { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 40; }
+            #sidebar-overlay.open { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; backdrop-filter: blur(2px); }
         }
-        .prose pre { background: #1e293b; color: white; padding: 1rem; border-radius: 0.75rem; overflow-x: auto; }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors">
 
-    <div id="loading"><b>Rishi AI Initializing...</b></div>
+    <div id="loading"><div class="animate-pulse font-bold text-xl">Rishi AI</div></div>
 
-    <div id="app" class="flex h-screen">
+    <div id="app" class="flex h-full">
         <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
         
-        <aside id="sidebar" class="bg-white dark:bg-slate-800 border-r dark:border-slate-700 flex flex-col p-4">
-            <h1 class="font-bold text-xl mb-6 flex items-center gap-2">
-                <span class="bg-blue-600 text-white px-2 rounded">R</span> Rishi AI
+        <aside id="sidebar" class="bg-white dark:bg-slate-800 border-r dark:border-slate-700 flex flex-col p-4 shadow-2xl md:shadow-none">
+            <h1 class="font-bold text-2xl mb-6 flex items-center gap-2">
+                <span class="bg-blue-600 text-white px-2.5 py-0.5 rounded-lg shadow-lg">R</span> Rishi AI
             </h1>
-            <button onclick="createNewChat()" class="w-full bg-slate-900 dark:bg-blue-600 text-white py-2 rounded-xl mb-4">+ New Chat</button>
-            <div id="history" class="flex-1 overflow-y-auto space-y-1"></div>
-            <button onclick="openSettings()" class="mt-4 text-sm text-slate-500">⚙️ Settings</button>
+            <button onclick="createNewChat()" class="w-full bg-slate-900 dark:bg-blue-600 text-white py-3 rounded-2xl mb-4 font-bold shadow-md hover:opacity-90 active:scale-95 transition-all">
+                + New Chat
+            </button>
+            <div id="history" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+            <div class="pt-4 border-t dark:border-slate-700 space-y-2">
+                <button onclick="toggleDarkMode()" class="w-full text-left p-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2">🌓 Change Theme</button>
+                <button onclick="openSettings()" class="w-full text-left p-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2">⚙️ Settings</button>
+            </div>
         </aside>
 
-        <main class="flex-1 flex flex-col relative bg-white dark:bg-slate-900">
-            <header class="h-14 border-b dark:border-slate-800 flex items-center px-4 justify-between">
-                <button onclick="toggleSidebar()" class="md:hidden">☰</button>
-                <div id="chat-title" class="font-medium truncate">New Chat</div>
-                <button onclick="toggleDarkMode()">🌓</button>
+        <main class="flex-1 flex flex-col relative bg-white dark:bg-slate-900 overflow-hidden">
+            <header class="h-14 border-b dark:border-slate-800 flex items-center px-4 justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-md z-10">
+                <button onclick="toggleSidebar()" class="md:hidden p-2 text-slate-500">☰</button>
+                <div id="chat-title" class="font-bold text-sm truncate opacity-70">Rishi AI</div>
+                <div class="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Live</div>
             </header>
 
-            <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-6">
+            <div id="chat-box" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scroll-smooth">
+                <div id="welcome" class="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
+                    <div class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white text-4xl font-bold shadow-2xl animate-bounce">R</div>
+                    <h2 class="text-3xl font-black tracking-tight">How can I help you?</h2>
+                    <p class="text-slate-500 dark:text-slate-400 max-w-sm">I'm your local AI assistant, optimized for speed and privacy.</p>
                 </div>
+            </div>
 
-            <div class="p-4 max-w-4xl mx-auto w-full">
-                <div class="relative">
-                    <textarea id="input" rows="1" class="w-full p-4 pr-12 rounded-2xl border dark:border-slate-700 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Ask Rishi AI..."></textarea>
-                    <button id="send-btn" onclick="send()" class="absolute right-2 bottom-2 bg-blue-600 text-white p-2 rounded-xl disabled:opacity-50">➔</button>
+            <div class="p-4 bg-gradient-to-t from-white dark:from-slate-900 via-white dark:via-slate-900 to-transparent">
+                <div class="max-w-4xl mx-auto relative group">
+                    <textarea id="input" rows="1" 
+                        class="w-full p-4 pr-14 rounded-2xl border-2 border-slate-100 dark:border-slate-700 dark:bg-slate-800 outline-none focus:border-blue-500 dark:focus:border-blue-500 resize-none shadow-2xl transition-all" 
+                        placeholder="Type a message..."></textarea>
+                    <button id="send-btn" onclick="send()" 
+                        class="absolute right-2.5 bottom-2.5 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-xl transition-all disabled:opacity-30 active:scale-90">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                    </button>
                 </div>
             </div>
         </main>
 
-        <div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-[100]">
-            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-md">
-                <h2 class="text-xl font-bold mb-4">Settings</h2>
-                <input id="key-in" type="password" class="w-full p-2 mb-3 border rounded dark:bg-slate-900" placeholder="OpenRouter API Key">
-                <input id="mod-in" type="text" class="w-full p-2 mb-4 border rounded dark:bg-slate-900" placeholder="Model (e.g. deepseek/deepseek-r1:free)">
-                <button onclick="saveSet()" class="w-full bg-blue-600 text-white py-2 rounded-lg">Save & Close</button>
+        <div id="modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center p-4 z-[100]">
+            <div class="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl border-4 border-white dark:border-slate-700">
+                <h2 class="text-2xl font-black mb-1">Settings</h2>
+                <p class="text-slate-500 text-xs mb-6 uppercase font-bold tracking-widest">Configure your Rishi AI</p>
+                
+                <div class="space-y-5">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1">OpenRouter API Key</label>
+                        <input id="key-in" type="password" class="w-full p-4 mt-1 bg-slate-50 dark:bg-slate-900 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 shadow-inner" placeholder="sk-or-v1-...">
+                    </div>
+                    
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Select Free Model (March 2026)</label>
+                        <select id="mod-sel" class="w-full p-4 mt-1 bg-slate-50 dark:bg-slate-900 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 shadow-inner appearance-none cursor-pointer">
+                            <option value="google/gemini-2.0-flash-lite-preview-02-05:free">Gemini 3.1 Flash (Fastest)</option>
+                            <option value="meta-llama/llama-4-maverick:free">Llama 4 Maverick (Balanced)</option>
+                            <option value="mistralai/mistral-small-24b-instruct-2501:free">Mistral Small (Logic)</option>
+                            <option value="google/gemma-2-9b-it:free">Gemma 2 (Compact)</option>
+                            <option value="custom">-- Custom Model ID --</option>
+                        </select>
+                    </div>
+
+                    <div id="custom-mod-div" class="hidden">
+                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Custom Model ID</label>
+                        <input id="mod-in" type="text" class="w-full p-4 mt-1 bg-slate-50 dark:bg-slate-900 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 shadow-inner" placeholder="author/model-name:free">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-8">
+                    <button onclick="saveSet()" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-blue-700 transition active:scale-95">SAVE CONFIG</button>
+                    <button onclick="closeSettings()" class="px-6 py-4 bg-slate-100 dark:bg-slate-700 rounded-2xl font-bold">CLOSE</button>
+                </div>
             </div>
         </div>
     </div>
@@ -69,79 +109,86 @@
     <script>
         const state = {
             key: localStorage.getItem('r_key') || '',
-            mod: localStorage.getItem('r_mod') || 'deepseek/deepseek-r1:free',
+            mod: localStorage.getItem('r_mod') || 'google/gemini-2.0-flash-lite-preview-02-05:free',
             chats: JSON.parse(localStorage.getItem('r_chats')) || [],
             activeId: null,
             isDark: localStorage.getItem('r_dark') === 'true'
         };
 
+        const modSel = document.getElementById('mod-sel');
+        const customDiv = document.getElementById('custom-mod-div');
+
         function init() {
             if(state.isDark) document.documentElement.classList.add('dark');
             renderHistory();
+            autoSize();
+            
+            // Sync select UI
+            if([...modSel.options].some(o => o.value === state.mod)) {
+                modSel.value = state.mod;
+            } else {
+                modSel.value = 'custom';
+                customDiv.classList.remove('hidden');
+                document.getElementById('mod-in').value = state.mod;
+            }
+
+            modSel.onchange = () => {
+                customDiv.classList.toggle('hidden', modSel.value !== 'custom');
+            };
+
             document.getElementById('loading').style.display = 'none';
             document.getElementById('app').style.display = 'flex';
         }
 
         async function send() {
             const val = document.getElementById('input').value.trim();
-            if(!val || !state.key) return !state.key ? openSettings() : null;
+            if(!val) return;
+            if(!state.key) return openSettings();
 
             if(!state.activeId) createNewChat(false);
             const chat = state.chats.find(c => c.id === state.activeId);
             
-            // 1. Add User Message
             chat.messages.push({ role: 'user', content: val });
             document.getElementById('input').value = '';
+            document.getElementById('welcome').style.display = 'none';
             renderMessages();
 
-            // 2. Add empty AI bubble for streaming
             const aiMsg = { role: 'assistant', content: '' };
             chat.messages.push(aiMsg);
-            renderMessages();
+            
+            const btn = document.getElementById('send-btn');
+            btn.disabled = true;
 
             try {
                 const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                     method: 'POST',
-                    headers: { 
-                        'Authorization': `Bearer ${state.key}`,
-                        'Content-Type': 'application/json',
-                        'HTTP-Referer': window.location.href,
-                        'X-Title': 'Rishi AI'
-                    },
+                    headers: { 'Authorization': `Bearer ${state.key}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ model: state.mod, messages: chat.messages.slice(0, -1), stream: true })
                 });
 
-                if(!res.ok) throw new Error(await res.text());
+                if(!res.ok) throw new Error((await res.json()).error?.message || "Check your Key/Model");
 
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
-                const lastMsgBody = document.querySelector('#chat-box > div:last-child .msg-body');
-
                 while(true) {
                     const { done, value } = await reader.read();
                     if(done) break;
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
+                    const lines = decoder.decode(value).split('\n');
                     for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            const data = line.slice(6);
-                            if (data === '[DONE]') continue;
+                        if (line.startsWith('data: ') && line !== 'data: [DONE]') {
                             try {
-                                const json = JSON.parse(data);
-                                const text = json.choices[0]?.delta?.content || '';
-                                aiMsg.content += text;
-                                lastMsgBody.innerHTML = marked.parse(aiMsg.content + '<span class="cursor-blink"></span>');
-                                document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
+                                const json = JSON.parse(line.slice(6));
+                                aiMsg.content += json.choices[0]?.delta?.content || '';
+                                renderMessages();
                             } catch(e) {}
                         }
                     }
                 }
-                lastMsgBody.innerHTML = marked.parse(aiMsg.content);
             } catch(e) {
-                alert("Error: " + e.message);
-                aiMsg.content = "⚠️ Failed to get response. Check API Key or Model.";
+                aiMsg.content = `🚨 **Error:** ${e.message}`;
                 renderMessages();
             } finally {
+                btn.disabled = false;
                 save();
             }
         }
@@ -150,21 +197,22 @@
             const id = Date.now().toString();
             state.chats.unshift({ id, title: 'New Chat', messages: [] });
             state.activeId = id;
-            if(render) renderMessages();
+            if(render) { document.getElementById('welcome').style.display = 'flex'; renderMessages(); }
             renderHistory();
             save();
+            if(window.innerWidth < 768) toggleSidebar();
         }
 
         function renderMessages() {
             const chat = state.chats.find(c => c.id === state.activeId);
             const box = document.getElementById('chat-box');
-            box.innerHTML = '';
             if(!chat) return;
+            box.innerHTML = ''; 
             chat.messages.forEach(m => {
                 const div = document.createElement('div');
-                div.className = `flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`;
-                div.innerHTML = `<div class="max-w-[80%] p-3 rounded-xl shadow-sm ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-slate-800 prose dark:prose-invert'}">
-                    <div class="msg-body">${marked.parse(m.content)}</div>
+                div.className = `flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`;
+                div.innerHTML = `<div class="max-w-[85%] p-4 rounded-3xl shadow-sm ${m.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-100 dark:bg-slate-800 dark:text-slate-200 prose dark:prose-invert rounded-tl-none'}">
+                    <div class="msg-body">${marked.parse(m.content + (state.isStreaming && m === chat.messages[chat.messages.length-1] ? '...' : ''))}</div>
                 </div>`;
                 box.appendChild(div);
             });
@@ -175,22 +223,30 @@
             const h = document.getElementById('history');
             h.innerHTML = '';
             state.chats.forEach(c => {
+                const active = state.activeId === c.id;
                 const d = document.createElement('div');
-                d.className = `p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 rounded ${state.activeId === c.id ? 'bg-blue-50 dark:bg-blue-900/30 font-bold' : ''}`;
-                d.innerText = c.messages.length > 0 ? c.messages[0].content.substring(0, 20) : 'New Chat';
-                d.onclick = () => { state.activeId = c.id; renderMessages(); renderHistory(); };
+                d.className = `p-3.5 cursor-pointer rounded-2xl transition-all truncate text-sm flex items-center gap-3 ${active ? 'bg-blue-600 text-white shadow-lg scale-105' : 'hover:bg-gray-100 dark:hover:bg-slate-700/50 text-slate-500'}`;
+                d.innerHTML = `<span class="opacity-50">${active ? '●' : '○'}</span> ${c.messages.length > 0 ? c.messages[0].content.substring(0, 24) : 'Empty Chat'}`;
+                d.onclick = () => { state.activeId = c.id; document.getElementById('welcome').style.display = (c.messages.length ? 'none' : 'flex'); renderMessages(); renderHistory(); if(window.innerWidth < 768) toggleSidebar(); };
                 h.appendChild(d);
             });
         }
 
-        function openSettings() { document.getElementById('modal').style.display = 'flex'; document.getElementById('key-in').value = state.key; document.getElementById('mod-in').value = state.mod; }
-        function saveSet() { state.key = document.getElementById('key-in').value; state.mod = document.getElementById('mod-in').value; localStorage.setItem('r_key', state.key); localStorage.setItem('r_mod', state.mod); document.getElementById('modal').style.display = 'none'; }
+        function openSettings() { document.getElementById('modal').style.display = 'flex'; document.getElementById('key-in').value = state.key; }
+        function closeSettings() { document.getElementById('modal').style.display = 'none'; }
+        function saveSet() {
+            state.key = document.getElementById('key-in').value.trim();
+            state.mod = modSel.value === 'custom' ? document.getElementById('mod-in').value.trim() : modSel.value;
+            localStorage.setItem('r_key', state.key);
+            localStorage.setItem('r_mod', state.mod);
+            closeSettings();
+        }
         function save() { localStorage.setItem('r_chats', JSON.stringify(state.chats)); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); }
         function toggleDarkMode() { state.isDark = !state.isDark; document.documentElement.classList.toggle('dark'); localStorage.setItem('r_dark', state.isDark); }
+        function autoSize() { const i = document.getElementById('input'); i.oninput = () => { i.style.height = 'auto'; i.style.height = Math.min(i.scrollHeight, 150) + 'px'; }; }
 
         window.onload = init;
     </script>
 </body>
 </html>
-
