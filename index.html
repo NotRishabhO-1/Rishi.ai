@@ -3,201 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rishi.ai | Gemini Edition</title>
+    <title>Rishi.ai | Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script type="importmap">
-        {
-          "imports": {
-            "@google/generative-ai": "https://esm.run/@google/generative-ai"
-          }
-        }
+        { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
     </script>
     <style>
         :root {
-            --bg-color: #f0f4f9;
-            --sidebar-color: #ffffff;
-            --text-color: #1f1f1f;
-            --input-bg: #ffffff;
-            --accent-color: #1a73e8;
-            --bot-msg-bg: transparent;
-            --user-msg-bg: #e9eef6;
+            --bg: #0e0e10;
+            --sidebar: #171719;
+            --accent: #8ab4f8;
+            --text: #ffffff;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
         }
 
-        [data-theme="dark"] {
-            --bg-color: #131314;
-            --sidebar-color: #1e1f20;
-            --text-color: #e3e3e3;
-            --input-bg: #1e1f20;
-            --accent-color: #8ab4f8;
-            --bot-msg-bg: transparent;
-            --user-msg-bg: #37393b;
+        [data-theme="light"] {
+            --bg: #f8f9fa;
+            --sidebar: #ffffff;
+            --accent: #1a73e8;
+            --text: #202124;
+            --glass: rgba(0, 0, 0, 0.03);
+            --border: rgba(0, 0, 0, 0.1);
         }
 
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            height: 100vh;
-            transition: 0.3s;
+        * { box-sizing: border-box; transition: all 0.3s ease; }
+        body { 
+            margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); 
+            color: var(--text); display: flex; height: 100vh; overflow: hidden;
         }
 
-        /* Sidebar */
+        /* Sidebar Styling */
         .sidebar {
-            width: 260px;
-            background-color: var(--sidebar-color);
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            border-right: 1px solid rgba(0,0,0,0.1);
+            width: 280px; background: var(--sidebar); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 20px; z-index: 10;
         }
 
-        .logo { font-size: 22px; font-weight: bold; margin-bottom: 30px; }
-        .logo span { color: var(--accent-color); }
+        .logo { font-size: 24px; font-weight: 600; margin-bottom: 30px; letter-spacing: -1px; }
+        .logo span { color: var(--accent); }
 
-        /* Main Chat Area */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
+        .btn-new-chat {
+            background: var(--glass); border: 1px solid var(--border); color: var(--text);
+            padding: 12px; border-radius: 12px; cursor: pointer; font-weight: 600;
+            margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px;
         }
+        .btn-new-chat:hover { background: var(--accent); color: white; transform: translateY(-2px); }
 
+        .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .history-item {
+            padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); opacity: 0.7;
+        }
+        .history-item:hover { background: var(--glass); opacity: 1; }
+
+        /* Main Chat Window */
+        .main { flex: 1; display: flex; flex-direction: column; position: relative; }
+        
         .chat-container {
-            width: 100%;
-            max-width: 800px;
-            flex: 1;
-            overflow-y: auto;
-            padding: 40px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            flex: 1; overflow-y: auto; padding: 40px 10% 120px 10%;
+            scroll-behavior: smooth; display: flex; flex-direction: column; gap: 24px;
         }
 
-        .message {
-            max-width: 85%;
-            padding: 12px 18px;
-            border-radius: 18px;
-            line-height: 1.6;
-            font-size: 16px;
+        /* Animations for Messages */
+        @keyframes fadeInSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .user-message {
-            align-self: flex-end;
-            background-color: var(--user-msg-bg);
+        .msg { 
+            max-width: 80%; line-height: 1.6; animation: fadeInSlide 0.4s ease forwards;
+            padding: 15px 20px; border-radius: 16px; 
+        }
+        .user-msg { align-self: flex-end; background: var(--accent); color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .bot-msg { align-self: flex-start; background: var(--glass); border: 1px solid var(--border); }
+
+        .thought { 
+            font-size: 13px; color: var(--accent); margin-bottom: 10px; padding-left: 10px; 
+            border-left: 2px solid var(--accent); opacity: 0.8;
         }
 
-        .bot-message {
-            align-self: flex-start;
-            background-color: var(--bot-msg-bg);
-            border: 1px solid rgba(128, 128, 128, 0.2);
+        /* Elegant Floating Input */
+        .input-area {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 700px; padding: 0 20px;
         }
-
-        /* Input Area */
-        .input-wrapper {
-            width: 100%;
-            max-width: 800px;
-            padding: 20px;
-            position: sticky;
-            bottom: 0;
-            background: linear-gradient(transparent, var(--bg-color) 20%);
+        .input-glass {
+            background: var(--glass); backdrop-filter: blur(10px);
+            border: 1px solid var(--border); border-radius: 20px;
+            padding: 10px 20px; display: flex; align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-
-        .input-box {
-            background-color: var(--input-bg);
-            border: 1px solid rgba(128,128,128,0.3);
-            border-radius: 30px;
-            padding: 10px 25px;
-            display: flex;
-            align-items: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-        }
-
         input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--text-color);
-            font-size: 16px;
-            padding: 10px 0;
+            flex: 1; background: transparent; border: none; outline: none;
+            color: var(--text); font-size: 16px; padding: 10px;
         }
+        .send-btn { color: var(--accent); font-size: 24px; cursor: pointer; border: none; background: none; }
 
-        .send-btn, .theme-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--accent-color);
-            font-weight: bold;
-            padding: 10px;
-        }
-
-        .theme-btn { margin-top: auto; color: var(--text-color); border: 1px solid gray; border-radius: 10px; }
-
+        .theme-toggle { margin-top: auto; cursor: pointer; opacity: 0.6; font-size: 12px; text-align: center; }
     </style>
 </head>
-<body>
+<body data-theme="dark">
 
-    <div class="sidebar">
+    <nav class="sidebar">
         <div class="logo">Rishi<span>.ai</span></div>
-        <div>New Chat</div>
-        <button class="theme-btn" onclick="toggleTheme()">Toggle Dark/Light</button>
-    </div>
+        <button class="btn-new-chat" onclick="newChat()">+ New Chat</button>
+        <div class="history-list" id="historyList"></div>
+        <div class="theme-toggle" onclick="toggleTheme()">SWITCH MODE</div>
+    </nav>
 
-    <div class="main-content">
-        <div class="chat-container" id="chat">
-            <div class="message bot-message">Hello! I am Rishi.ai. How can I help you today?</div>
+    <main class="main">
+        <div class="chat-container" id="chatbox">
+            <div class="msg bot-msg">Welcome back. How can I assist your thinking today?</div>
         </div>
 
-        <div class="input-wrapper">
-            <div class="input-box">
-                <input type="text" id="userInput" placeholder="Enter a prompt here..." onkeypress="handleKey(event)">
-                <button class="send-btn" onclick="sendMessage()">➤</button>
+        <div class="input-area">
+            <div class="input-glass">
+                <input type="text" id="userInput" placeholder="Message Rishi.ai..." onkeypress="if(event.key==='Enter') ask()">
+                <button class="send-btn" onclick="ask()">⚡</button>
             </div>
         </div>
-    </div>
+    </main>
 
     <script type="module">
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        // 1. PUT YOUR API KEY HERE
         const API_KEY = "AIzaSyAUvnsysMJVBW4Bd4PFeb7De_MqLa1U0U4"; 
         const genAI = new GoogleGenerativeAI(API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        let chatHistory = JSON.parse(localStorage.getItem('rishi_chats')) || [];
 
-        window.sendMessage = async () => {
+        // Initialize Sidebar
+        const updateSidebar = () => {
+            const list = document.getElementById('historyList');
+            list.innerHTML = chatHistory.map((c, i) => `
+                <div class="history-item" onclick="loadChat(${i})">${c.title}</div>
+            `).join('');
+        };
+
+        window.newChat = () => {
+            document.getElementById('chatbox').innerHTML = '<div class="msg bot-msg">New thread started.</div>';
+        };
+
+        window.ask = async () => {
             const input = document.getElementById("userInput");
-            const chat = document.getElementById("chat");
-            const text = input.value.trim();
+            const chat = document.getElementById("chatbox");
+            if (!input.value) return;
 
-            if (!text) return;
-
-            // Add User Message
-            chat.innerHTML += `<div class="message user-message">${text}</div>`;
+            const prompt = input.value;
+            chat.innerHTML += `<div class="msg user-msg">${prompt}</div>`;
             input.value = "";
             chat.scrollTop = chat.scrollHeight;
 
             try {
-                const result = await model.generateContent(text);
-                const response = await result.response;
-                const botText = response.text();
+                const model = genAI.getGenerativeModel({ 
+                    model: "gemini-3-flash-preview",
+                    tools: [{ googleSearch: {} }] 
+                });
 
-                // Add Bot Message
-                chat.innerHTML += `<div class="message bot-message">${botText}</div>`;
+                const result = await model.generateContent({
+                    contents: [{ role: "user", parts: [{ text: prompt }] }],
+                    generationConfig: { thinkingConfig: { includeThoughts: true } }
+                });
+
+                const response = await result.response;
+                let html = "";
+                
+                // Handle Thinking & Response
+                const parts = response.candidates[0].content.parts;
+                parts.forEach(p => {
+                    if (p.thought) html += `<div class="thought">Thought: ${p.text}</div>`;
+                    else html += `<div>${p.text}</div>`;
+                });
+
+                chat.innerHTML += `<div class="msg bot-msg">${html}</div>`;
                 chat.scrollTop = chat.scrollHeight;
-            } catch (error) {
-                chat.innerHTML += `<div class="message bot-message" style="color:red">Error: ${error.message}</div>`;
+
+                // Save to History
+                if(chatHistory.length > 10) chatHistory.shift();
+                chatHistory.push({ title: prompt.substring(0, 25) + '...', date: new Date() });
+                localStorage.setItem('rishi_chats', JSON.stringify(chatHistory));
+                updateSidebar();
+
+            } catch (err) {
+                chat.innerHTML += `<div class="msg bot-msg" style="color:#ff6b6b">System Error: ${err.message}</div>`;
             }
         };
 
-        window.handleKey = (e) => { if(e.key === 'Enter') sendMessage(); };
-
         window.toggleTheme = () => {
-            const body = document.body;
-            const current = body.getAttribute("data-theme");
-            body.setAttribute("data-theme", current === "dark" ? "light" : "dark");
+            const b = document.body;
+            b.setAttribute('data-theme', b.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
         };
+
+        updateSidebar();
     </script>
 </body>
 </html>
